@@ -24,6 +24,13 @@ with get_db_connection() as conn:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     password TEXT
                 )''')
+    
+    # 관리자 비밀번호 설정 (초기 한 번만 실행)
+    default_password = hashlib.sha256("admin1234".encode()).hexdigest()
+    cur.execute("SELECT * FROM admin")
+    if not cur.fetchone():
+        cur.execute("INSERT INTO admin (password) VALUES (?)", (default_password,))
+        
     conn.commit()
 
 @app.route('/', methods=['GET', 'POST'])
