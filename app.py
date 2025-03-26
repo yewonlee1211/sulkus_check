@@ -83,16 +83,48 @@ def admin():
 def manage():
     if not session.get('admin'):
         return redirect(url_for('admin'))
-    
+
     conn = get_db_connection()
     cur = conn.cursor()
+
+    # 학기 목록
     cur.execute("SELECT * FROM semesters")
     semesters = cur.fetchall()
+
+    # 전체 학생 목록
     cur.execute("SELECT * FROM students")
-    students = cur.fetchall()
+    all_students = cur.fetchall()
+    total = len(all_students)
+
+    # 이름-학번 조합 기준 등록 횟수 집계 및 타대생 여부 판단
+    count_map = defaultdict(int)
+    status_map = defaultdict(list)
+
+    for s in all_students:
+        key = (s['name'], s['student_id'])
+        count_map[key] += 1
+        status_map[key].append(s['is_other_univ'])
+
+    summarized_students = []
+    added_keys = set()
+    for s in all_students:
+        key = (s['name'], s['student_id'])
+        if key not in added_keys:
+            status_list = status_map[key]
+            most_common = Counter(status_list).most_common()
+            is_other_univ = most_common[0][0] if len(most_common) == 1 else (
+                most_common[0][1] == len(status_list) and most_common[0][0] or "알 수 없음")
+            summarized_students.append({
+                'name': s['name'],
+                'student_id': s['student_id'],
+                'count': count_map[key],
+                'is_other_univ': is_other_univ
+            })
+            added_keys.add(key)
+
     conn.close()
-    
-    return render_template('manage.html', students=students, semesters=semesters)
+    return render_template('manage.html', students=summarized_students, semesters=semesters, total=len(summarized_students))
+
 
 @app.route('/add_student', methods=['POST']) # 전체 명부에서 학생 추가
 def add_student():
@@ -187,6 +219,25 @@ def upload_csv(label):
     conn.close()
 
     return redirect(url_for('view_semester', label=label))
+
+@app.route('/delete_semester/<label>') # 학기 테이블 삭제
+def delete_semester(label):
+    if not session.get('admin'):
+        return redirect(url_for('admin'))
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # 먼저 해당 학기에 속한 학생들을 삭제
+    cur.execute("DELETE FROM students WHERE registration_semester = ?", (label,))
+    
+    # 학기 정보 삭제
+    cur.execute("DELETE FROM semesters WHERE label = ?", (label,))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('manage'))
+
 
 @app.route('/delete/<int:id>') # 
 def delete_student(id):
