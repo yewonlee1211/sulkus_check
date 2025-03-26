@@ -135,7 +135,7 @@ def add_semester():
 
     year = request.form['year']
     term = request.form['term']
-    label = f"{year}년 {term}학기"
+    label = f"{year}-{term}"
 
     conn = get_db_connection()
     cur = conn.cursor()
