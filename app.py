@@ -115,7 +115,7 @@ def manage():
         summarized_students.append({
             'name': name,
             'student_id': student_id,
-            'count': count_map[key],
+            'registration_semester': count_map[key],
             'is_other_univ': is_other_univ
         })        
     
@@ -200,7 +200,7 @@ def upload_csv(label):
 
     return redirect(url_for('view_semester', label=label))
     
-@app.route('/bulk_delete', methods=['POST'])
+@app.route('/bulk_delete', methods=['POST']) # 일괄 삭제
 def bulk_delete():
     if not session.get('admin'):
         return redirect(url_for('admin'))
@@ -217,7 +217,7 @@ def bulk_delete():
     return redirect(url_for('manage'))
 
 
-@app.route('/delete/<int:id>') # 
+@app.route('/delete/<int:id>') # 학기별 항목 삭제에서 사용 
 def delete_student(id):
     if not session.get('admin'):
         return redirect(url_for('admin'))
@@ -228,8 +228,8 @@ def delete_student(id):
     conn.commit()
     conn.close()
 
-    return redirect(url_for('manage'))
-
+    return redirect(url_for('view_semester', label=label))
+    
 @app.route('/logout')
 def logout():
     session.pop('admin', None)
