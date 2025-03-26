@@ -199,6 +199,23 @@ def upload_csv(label):
     conn.close()
 
     return redirect(url_for('view_semester', label=label))
+    
+@app.route('/bulk_delete', methods=['POST'])
+def bulk_delete():
+    if not session.get('admin'):
+        return redirect(url_for('admin'))
+
+    name = request.form['name'].strip()
+    student_id = request.form['student_id'].strip()
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM students WHERE name = ? AND student_id = ?", (name, student_id))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('manage'))
+
 
 @app.route('/delete/<int:id>') # 
 def delete_student(id):
