@@ -1,8 +1,7 @@
-
 <!DOCTYPE html>
 <html>
 <head>
-    <title>학생 관리</title>
+    <title>관리자 페이지</title>
 </head>
 <body>
     <h2>학생 목록</h2>
@@ -20,9 +19,7 @@
             <td>{{ student.student_id }}</td>
             <td>{{ student.is_other_univ }}</td>
             <td>{{ student.registration_semester }}</td>
-            <td>
-                <a href="{{ url_for('delete_student', id=student.id) }}">삭제</a>
-            </td>
+            <td><a href="{{ url_for('delete_student', id=student.id) }}">삭제</a></td>
         </tr>
         {% endfor %}
     </table>
@@ -40,8 +37,32 @@
         <button type="submit">추가</button>
     </form>
 
+    <hr>
+
+    <h2>학기 추가하기</h2>
+    <form method="post" action="{{ url_for('add_semester') }}">
+        연도 (예: 2024): <input type="text" name="year" pattern="\\d{4}" required>
+        학기:
+        <select name="term" required>
+            <option value="1">1</option>
+            <option value="2">2</option>
+        </select>
+        <button type="submit">학기 생성</button>
+    </form>
+
+    <h2>학기 선택하기</h2>
+    <form method="get">
+        <select onchange="location.href='/semester/' + this.value;">
+            <option disabled selected>학기를 선택하세요</option>
+            {% for semester in semesters %}
+            <option value="{{ semester.label }}">{{ semester.label }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
     <br>
     <a href="{{ url_for('logout') }}">로그아웃</a>
 </body>
 </html>
+
 

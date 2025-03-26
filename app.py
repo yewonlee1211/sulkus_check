@@ -16,7 +16,7 @@ with get_db_connection() as conn:
     cur.execute('''CREATE TABLE IF NOT EXISTS students (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT,
-                    student_id TEXT UNIQUE,
+                    student_id TEXT,
                     is_other_univ TEXT,
                     registration_semester TEXT
                 )''')
@@ -24,13 +24,16 @@ with get_db_connection() as conn:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     password TEXT
                 )''')
-    
-    # 관리자 비밀번호 설정 (초기 한 번만 실행)
+    cur.execute('''CREATE TABLE IF NOT EXISTS semesters (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    year TEXT,
+                    term TEXT,
+                    label TEXT UNIQUE
+                )''')
     default_password = hashlib.sha256("admin1234".encode()).hexdigest()
     cur.execute("SELECT * FROM admin")
     if not cur.fetchone():
         cur.execute("INSERT INTO admin (password) VALUES (?)", (default_password,))
-        
     conn.commit()
 
 @app.route('/', methods=['GET', 'POST'])
@@ -81,16 +84,13 @@ def manage():
     
     conn = get_db_connection()
     cur = conn.cursor()
+    cur.execute("SELECT * FROM semesters")
+    semesters = cur.fetchall()
     cur.execute("SELECT * FROM students")
     students = cur.fetchall()
     conn.close()
     
-    return render_template('manage.html', students=students)
-
-@app.route('/logout')
-def logout():
-    session.pop('admin', None)
-    return redirect(url_for('index'))
+    return render_template('manage.html', students=students, semesters=semesters)
 
 @app.route('/add_student', methods=['POST'])
 def add_student():
@@ -111,6 +111,54 @@ def add_student():
 
     return redirect(url_for('manage'))
 
+@app.route('/add_semester', methods=['POST'])
+def add_semester():
+    if not session.get('admin'):
+        return redirect(url_for('admin'))
+
+    year = request.form['year']
+    term = request.form['term']
+    label = f"{year}년 {term}학기"
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("INSERT OR IGNORE INTO semesters (year, term, label) VALUES (?, ?, ?)", (year, term, label))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('manage'))
+
+@app.route('/semester/<label>')
+def view_semester(label):
+    if not session.get('admin'):
+        return redirect(url_for('admin'))
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM students WHERE registration_semester = ?", (label,))
+    students = cur.fetchall()
+    conn.close()
+
+    return render_template('semester.html', students=students, label=label)
+
+@app.route('/add_student_to_semester/<label>', methods=['POST'])
+def add_student_to_semester(label):
+    if not session.get('admin'):
+        return redirect(url_for('admin'))
+
+    name = request.form['name']
+    student_id = request.form['student_id']
+    is_other_univ = request.form['is_other_univ']
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("INSERT INTO students (name, student_id, is_other_univ, registration_semester) VALUES (?, ?, ?, ?)",
+                (name, student_id, is_other_univ, label))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('view_semester', label=label))
+
 @app.route('/delete/<int:id>')
 def delete_student(id):
     if not session.get('admin'):
@@ -124,7 +172,10 @@ def delete_student(id):
 
     return redirect(url_for('manage'))
 
-
+@app.route('/logout')
+def logout():
+    session.pop('admin', None)
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True)
