@@ -196,7 +196,7 @@ def add_student_to_semester(label):
     return redirect(url_for('view_semester', label=label))
 
 # 엑셀(csv) 파일 업로드를 통한 학기별 학생 일괄 추가
-@app.route('/upload_csv/<label>', methods=['POST'])
+'''@app.route('/upload_csv/<label>', methods=['POST'])
 def upload_csv(label):
     if 'file' not in request.files:
         return "파일이 업로드되지 않았습니다."
@@ -220,7 +220,7 @@ def upload_csv(label):
     conn.commit()
     conn.close()
 
-    return redirect(url_for('view_semester', label=label))
+    return redirect(url_for('view_semester', label=label))'''
 
 @app.route('/delete_semester/<label>') # 학기 테이블 삭제
 def delete_semester(label):
