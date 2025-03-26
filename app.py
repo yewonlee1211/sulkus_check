@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session
+from collections import defaultdict
 import sqlite3
 import hashlib
 import csv
