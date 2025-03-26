@@ -94,25 +94,6 @@ def manage():
     
     return render_template('manage.html', students=students, semesters=semesters)
 
-@app.route('/add_student', methods=['POST']) # 전체 명부에서 학생 추가
-def add_student():
-    if not session.get('admin'):
-        return redirect(url_for('admin'))
-
-    name = request.form['name']
-    student_id = request.form['student_id']
-    is_other_univ = request.form['is_other_univ']
-    registration_semester = request.form['registration_semester']
-
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("INSERT INTO students (name, student_id, is_other_univ, registration_semester) VALUES (?, ?, ?, ?)",
-                (name, student_id, is_other_univ, registration_semester))
-    conn.commit()
-    conn.close()
-
-    return redirect(url_for('manage'))
-
 @app.route('/add_semester', methods=['POST']) # 학기 추가
 def add_semester():
     if not session.get('admin'):
