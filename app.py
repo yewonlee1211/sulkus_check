@@ -39,7 +39,7 @@ with get_db_connection() as conn:
         cur.execute("INSERT INTO admin (password) VALUES (?)", (default_password,))
     conn.commit()
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST']) # 기본화면 
 def index():
     if request.method == 'POST':
         name = request.form['name']
@@ -60,7 +60,7 @@ def index():
     
     return render_template('index.html')
 
-@app.route('/admin', methods=['GET', 'POST'])
+@app.route('/admin', methods=['GET', 'POST']) # 관리자 로그인 
 def admin():
     if request.method == 'POST':
         password = request.form['password']
@@ -80,15 +80,18 @@ def admin():
     
     return render_template('admin.html')
 
-@app.route('/manage', methods=['GET', 'POST'])
+@app.route('/manage', methods=['GET', 'POST']) # 관리자 페이지
 def manage():
     if not session.get('admin'):
         return redirect(url_for('admin'))
-    
+
     conn = get_db_connection()
     cur = conn.cursor()
+
+    # 학기 목록
     cur.execute("SELECT * FROM semesters")
     semesters = cur.fetchall()
+
     cur.execute("SELECT * FROM students")    
     all_students = cur.fetchall()
 
@@ -123,6 +126,7 @@ def manage():
     total = len(summarized_students)
     
     return render_template('manage.html', students=summarized_students, semesters=semesters, total=total)
+
 
 @app.route('/add_semester', methods=['POST']) # 학기 추가
 def add_semester():
@@ -216,8 +220,26 @@ def bulk_delete():
 
     return redirect(url_for('manage'))
 
+@app.route('/delete_semester/<label>') # 학기 테이블 삭제
+def delete_semester(label):
+    if not session.get('admin'):
+        return redirect(url_for('admin'))
 
-@app.route('/delete/<int:id>') # 학기별 항목 삭제에서 사용 
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # 먼저 해당 학기에 속한 학생들을 삭제
+    cur.execute("DELETE FROM students WHERE registration_semester = ?", (label,))
+    
+    # 학기 정보 삭제
+    cur.execute("DELETE FROM semesters WHERE label = ?", (label,))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('manage'))
+
+
+@app.route('/delete/<int:id>') # 
 def delete_student(id):
     if not session.get('admin'):
         return redirect(url_for('admin'))

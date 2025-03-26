@@ -39,20 +39,27 @@
     </script>
 </head>
 <body>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <p style="color:red;">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
     <h2>학생 목록 (총 인원: {{ total }}명)</h2>
     <table id="studentTable" border="1">
         <tr>
             <th onclick="sortTable(0, 'studentTable')">이름</th>
             <th onclick="sortTable(1, 'studentTable')">학번</th>
             <th onclick="sortTable(2, 'studentTable')">타대생 여부</th>
-            <th onclick="sortTable(3, 'studentTable')">등록 학기</th>
-            <th>삭제</th>
+            <th onclick="sortTable(3, 'studentTable')">등록 횟수</th>
         </tr>
         {% for student in students %}
         <tr>
             <td>{{ student.name }}</td>
             <td>{{ student.student_id }}</td>
             <td>{{ student.is_other_univ }}</td>
+
             <td>{{ student.registration_semester }}</td>
             <td>
                 <form action="{{ url_for('bulk_delete') }}" method="POST" onsubmit="return confirm('정말 삭제하시겠습니까?')">
@@ -61,10 +68,10 @@
                     <button type="submit">삭제</button>
                 </form>
             </td>
+
         </tr>
         {% endfor %}
     </table>
-
 
     <hr>
 
@@ -88,6 +95,16 @@
             {% endfor %}
         </select>
     </form>
+
+    <h3>학기 삭제</h3>
+    <ul>
+        {% for semester in semesters %}
+        <li>
+            {{ semester.label }}
+            <a href="{{ url_for('delete_semester', label=semester.label) }}" onclick="return confirm('정말 삭제하시겠습니까?')">삭제</a>
+        </li>
+        {% endfor %}
+    </ul>
 
     <br>
     <a href="{{ url_for('logout') }}">로그아웃</a>
