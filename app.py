@@ -38,7 +38,7 @@ with get_db_connection() as conn:
         cur.execute("INSERT INTO admin (password) VALUES (?)", (default_password,))
     conn.commit()
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST']) # 기본화면 
 def index():
     if request.method == 'POST':
         name = request.form['name']
@@ -59,7 +59,7 @@ def index():
     
     return render_template('index.html')
 
-@app.route('/admin', methods=['GET', 'POST'])
+@app.route('/admin', methods=['GET', 'POST']) # 관리자 로그인 
 def admin():
     if request.method == 'POST':
         password = request.form['password']
@@ -79,7 +79,7 @@ def admin():
     
     return render_template('admin.html')
 
-@app.route('/manage', methods=['GET', 'POST'])
+@app.route('/manage', methods=['GET', 'POST']) # 관리자 페이지
 def manage():
     if not session.get('admin'):
         return redirect(url_for('admin'))
@@ -112,8 +112,10 @@ def manage():
         if key not in added_keys:
             status_list = status_map[key]
             most_common = Counter(status_list).most_common()
-            is_other_univ = most_common[0][0] if len(most_common) == 1 else (
-                most_common[0][1] == len(status_list) and most_common[0][0] or "알 수 없음")
+            if len(set(status_list)) == 1:
+                is_other_univ = status_list[0]
+            else:
+                is_other_univ = "알 수 없음"
             summarized_students.append({
                 'name': s['name'],
                 'student_id': s['student_id'],
@@ -125,8 +127,8 @@ def manage():
     conn.close()
     return render_template('manage.html', students=summarized_students, semesters=semesters, total=len(summarized_students))
 
-
-@app.route('/add_student', methods=['POST']) # 전체 명부에서 학생 추가
+ # 전체 명부에서 학생 추가 기능인데 우선 제거함
+'''@app.route('/add_student', methods=['POST'])
 def add_student():
     if not session.get('admin'):
         return redirect(url_for('admin'))
@@ -143,7 +145,7 @@ def add_student():
     conn.commit()
     conn.close()
 
-    return redirect(url_for('manage'))
+    return redirect(url_for('manage'))'''
 
 @app.route('/add_semester', methods=['POST']) # 학기 추가
 def add_semester():
