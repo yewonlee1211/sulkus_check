@@ -2,14 +2,48 @@
 <html>
 <head>
     <title>{{ label }} 등록 인원</title>
+    <script>
+        function sortTable(n, tableId) {
+            var table = document.getElementById(tableId);
+            var rows = table.rows;
+            var switching = true;
+            var dir = "asc";
+            var shouldSwitch, i, x, y;
+
+            while (switching) {
+                switching = false;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+
+                    if (dir == "asc" && x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    } else if (dir == "desc" && x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                } else if (dir == "asc") {
+                    dir = "desc";
+                    switching = true;
+                }
+            }
+        }
+    </script>
 </head>
 <body>
-    <h2>{{ label }} 등록 인원</h2>
-    <table border="1">
+    <h2>{{ label }} 등록 인원 (총 인원: {{ total }}명)</h2>
+    <table id="semesterTable" border="1">
         <tr>
-            <th>이름</th>
-            <th>학번</th>
-            <th>타대생 여부</th>
+            <th onclick="sortTable(0, 'semesterTable')">이름</th>
+            <th onclick="sortTable(1, 'semesterTable')">학번</th>
+            <th onclick="sortTable(2, 'semesterTable')">타대생 여부</th>
             <th>삭제</th>
         </tr>
         {% for student in students %}
@@ -32,6 +66,12 @@
             <option value="아니오">아니오</option>
         </select><br>
         <button type="submit">추가</button>
+    </form>
+
+    <h3>표로 입력하기 (엑셀 또는 CSV 파일 업로드)</h3>
+    <form method="post" action="{{ url_for('upload_csv', label=label) }}" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".csv" required>
+        <button type="submit">업로드</button>
     </form>
 
     <br>

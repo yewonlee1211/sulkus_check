@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 import hashlib
+import csv
+import io
 
 app = Flask(__name__)
 app.secret_key = 'sulkus'  # 세션 관리를 위한 키
@@ -92,7 +94,7 @@ def manage():
     
     return render_template('manage.html', students=students, semesters=semesters)
 
-@app.route('/add_student', methods=['POST'])
+@app.route('/add_student', methods=['POST']) # 전체 명부에서 학생 추가
 def add_student():
     if not session.get('admin'):
         return redirect(url_for('admin'))
@@ -111,7 +113,7 @@ def add_student():
 
     return redirect(url_for('manage'))
 
-@app.route('/add_semester', methods=['POST'])
+@app.route('/add_semester', methods=['POST']) # 학기 추가
 def add_semester():
     if not session.get('admin'):
         return redirect(url_for('admin'))
@@ -128,7 +130,7 @@ def add_semester():
 
     return redirect(url_for('manage'))
 
-@app.route('/semester/<label>')
+@app.route('/semester/<label>') # 학기별 확인
 def view_semester(label):
     if not session.get('admin'):
         return redirect(url_for('admin'))
@@ -141,7 +143,7 @@ def view_semester(label):
 
     return render_template('semester.html', students=students, label=label)
 
-@app.route('/add_student_to_semester/<label>', methods=['POST'])
+@app.route('/add_student_to_semester/<label>', methods=['POST']) #학기별 추가
 def add_student_to_semester(label):
     if not session.get('admin'):
         return redirect(url_for('admin'))
@@ -159,7 +161,34 @@ def add_student_to_semester(label):
 
     return redirect(url_for('view_semester', label=label))
 
-@app.route('/delete/<int:id>')
+# 엑셀(csv) 파일 업로드를 통한 학기별 학생 일괄 추가
+@app.route('/upload_csv/<label>', methods=['POST'])
+def upload_csv(label):
+    if 'file' not in request.files:
+        return "파일이 업로드되지 않았습니다."
+    file = request.files['file']
+    if file.filename == '':
+        return "선택된 파일이 없습니다."
+    if not file.filename.endswith('.csv'):
+        return "CSV 파일만 업로드 가능합니다."
+
+    # CSV 파싱 후 삽입
+    stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+    csv_input = csv.reader(stream)
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    for row in csv_input:
+        if len(row) >= 3:
+            name, student_id, is_other_univ = row[0], row[1], row[2]
+            cur.execute("INSERT INTO students (name, student_id, is_other_univ, registration_semester) VALUES (?, ?, ?, ?)",
+                        (name.strip(), student_id.strip(), is_other_univ.strip(), label))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('view_semester', label=label))
+
+@app.route('/delete/<int:id>') # 
 def delete_student(id):
     if not session.get('admin'):
         return redirect(url_for('admin'))

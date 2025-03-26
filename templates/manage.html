@@ -1,16 +1,51 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>관리자 페이지</title>
+    <title>학생 관리</title>
+    <script>
+        // 간단한 테이블 정렬 스크립트
+        function sortTable(n, tableId) {
+            var table = document.getElementById(tableId);
+            var rows = table.rows;
+            var switching = true;
+            var dir = "asc";
+            var shouldSwitch, i, x, y;
+
+            while (switching) {
+                switching = false;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+
+                    if (dir == "asc" && x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    } else if (dir == "desc" && x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                } else if (dir == "asc") {
+                    dir = "desc";
+                    switching = true;
+                }
+            }
+        }
+    </script>
 </head>
 <body>
-    <h2>학생 목록</h2>
-    <table border="1">
+    <h2>학생 목록 (총 인원: {{ total }}명)</h2>
+    <table id="studentTable" border="1">
         <tr>
-            <th>이름</th>
-            <th>학번</th>
-            <th>타대생 여부</th>
-            <th>등록 학기</th>
+            <th onclick="sortTable(0, 'studentTable')">이름</th>
+            <th onclick="sortTable(1, 'studentTable')">학번</th>
+            <th onclick="sortTable(2, 'studentTable')">타대생 여부</th>
+            <th onclick="sortTable(3, 'studentTable')">등록 학기</th>
             <th>삭제</th>
         </tr>
         {% for student in students %}
@@ -41,7 +76,7 @@
 
     <h2>학기 추가하기</h2>
     <form method="post" action="{{ url_for('add_semester') }}">
-        연도 (예: 2024): <input type="text" name="year" pattern="\\d{4}" required>
+        연도 (숫자 4자리): <input type="text" name="year" pattern="\d{4}" required>
         학기:
         <select name="term" required>
             <option value="1">1</option>
@@ -64,5 +99,6 @@
     <a href="{{ url_for('logout') }}">로그아웃</a>
 </body>
 </html>
+
 
 
