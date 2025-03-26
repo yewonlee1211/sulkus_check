@@ -92,10 +92,8 @@ def manage():
     cur.execute("SELECT * FROM semesters")
     semesters = cur.fetchall()
 
-    # 전체 학생 목록
-    cur.execute("SELECT * FROM students")
+    cur.execute("SELECT * FROM students")    
     all_students = cur.fetchall()
-    total = len(all_students)
 
     # 이름-학번 조합 기준 등록 횟수 집계 및 타대생 여부 판단
     count_map = defaultdict(int)
@@ -107,26 +105,28 @@ def manage():
         status_map[key].append(s['is_other_univ'])
 
     summarized_students = []
-    added_keys = set()
-    for s in all_students:
-        key = (s['name'], s['student_id'])
-        if key not in added_keys:
-            status_list = status_map[key]
-            most_common = Counter(status_list).most_common()
-            if len(set(status_list)) == 1:
-                is_other_univ = status_list[0]
-            else:
-                is_other_univ = "알 수 없음"
-            summarized_students.append({
-                'name': s['name'],
-                'student_id': s['student_id'],
-                'count': count_map[key],
-                'is_other_univ': is_other_univ
-            })
-            added_keys.add(key)
+    
+    for key in list(count_map.keys()):
+        name, student_id = key
+        univ = status_map[key]
+        if len(set(univ)) == 1:
+            is_other_univ = univ[0]
+        else:
+            is_other_univ = '알 수 없음'
 
+        
+        summarized_students.append({
+            'name': name,
+            'student_id': student_id,
+            'registration_semester': count_map[key],
+            'is_other_univ': is_other_univ
+        })        
+    
     conn.close()
-    return render_template('manage.html', students=summarized_students, semesters=semesters, total=len(summarized_students))
+    total = len(summarized_students)
+    
+    return render_template('manage.html', students=summarized_students, semesters=semesters, total=total)
+
 
 @app.route('/add_semester', methods=['POST']) # 학기 추가
 def add_semester():
@@ -154,9 +154,10 @@ def view_semester(label):
     cur = conn.cursor()
     cur.execute("SELECT * FROM students WHERE registration_semester = ?", (label,))
     students = cur.fetchall()
+    total = len(students)
     conn.close()
 
-    return render_template('semester.html', students=students, label=label)
+    return render_template('semester.html', students=students, label=label, total=total)
 
 @app.route('/add_student_to_semester/<label>', methods=['POST']) #학기별 추가
 def add_student_to_semester(label):
@@ -202,6 +203,22 @@ def upload_csv(label):
     conn.close()
 
     return redirect(url_for('view_semester', label=label))
+    
+@app.route('/bulk_delete', methods=['POST']) # 일괄 삭제
+def bulk_delete():
+    if not session.get('admin'):
+        return redirect(url_for('admin'))
+
+    name = request.form['name'].strip()
+    student_id = request.form['student_id'].strip()
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM students WHERE name = ? AND student_id = ?", (name, student_id))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('manage'))
 
 @app.route('/delete_semester/<label>') # 학기 테이블 삭제
 def delete_semester(label):
@@ -233,8 +250,8 @@ def delete_student(id):
     conn.commit()
     conn.close()
 
-    return redirect(url_for('manage'))
-
+    return redirect(url_for('view_semester', label=label))
+    
 @app.route('/logout')
 def logout():
     session.pop('admin', None)
