@@ -92,5 +92,39 @@ def logout():
     session.pop('admin', None)
     return redirect(url_for('index'))
 
+@app.route('/add_student', methods=['POST'])
+def add_student():
+    if not session.get('admin'):
+        return redirect(url_for('admin'))
+
+    name = request.form['name']
+    student_id = request.form['student_id']
+    is_other_univ = request.form['is_other_univ']
+    registration_semester = request.form['registration_semester']
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("INSERT INTO students (name, student_id, is_other_univ, registration_semester) VALUES (?, ?, ?, ?)",
+                (name, student_id, is_other_univ, registration_semester))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('manage'))
+
+@app.route('/delete/<int:id>')
+def delete_student(id):
+    if not session.get('admin'):
+        return redirect(url_for('admin'))
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM students WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('manage'))
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -19,10 +20,28 @@
             <td>{{ student.student_id }}</td>
             <td>{{ student.is_other_univ }}</td>
             <td>{{ student.registration_semester }}</td>
-            <td><a href="{{ url_for('delete_student', id=student.id) }}">삭제</a></td>
+            <td>
+                <a href="{{ url_for('delete_student', id=student.id) }}">삭제</a>
+            </td>
         </tr>
         {% endfor %}
     </table>
+
+    <h2>학생 추가</h2>
+    <form method="post" action="{{ url_for('add_student') }}">
+        이름: <input type="text" name="name" required><br>
+        학번: <input type="text" name="student_id" required><br>
+        타대생 여부:
+        <select name="is_other_univ">
+            <option value="예">예</option>
+            <option value="아니오">아니오</option>
+        </select><br>
+        등록 학기: <input type="text" name="registration_semester" required><br>
+        <button type="submit">추가</button>
+    </form>
+
+    <br>
     <a href="{{ url_for('logout') }}">로그아웃</a>
 </body>
 </html>
+
