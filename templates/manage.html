@@ -39,6 +39,13 @@
     </script>
 </head>
 <body>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <p style="color:red;">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
     <h2>학생 목록 (총 인원: {{ total }}명)</h2>
     <table id="studentTable" border="1">
         <tr>
