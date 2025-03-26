@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session
+from collections import defaultdict
 import sqlite3
 import hashlib
 import csv
@@ -88,11 +89,40 @@ def manage():
     cur = conn.cursor()
     cur.execute("SELECT * FROM semesters")
     semesters = cur.fetchall()
-    cur.execute("SELECT * FROM students")
-    students = cur.fetchall()
-    conn.close()
+    cur.execute("SELECT * FROM students")    
+    all_students = cur.fetchall()
+
+    # 이름-학번 조합 기준 등록 횟수 집계 및 타대생 여부 판단
+    count_map = defaultdict(int)
+    status_map = defaultdict(list)
+
+    for s in all_students:
+        key = (s['name'], s['student_id'])
+        count_map[key] += 1
+        status_map[key].append(s['is_other_univ'])
+
+    summarized_students = []
     
-    return render_template('manage.html', students=students, semesters=semesters)
+    for key in list(count_map.keys()):
+        name, student_id = key
+        univ = status_map[key]
+        if len(set(univ)) == 1:
+            is_other_univ = univ[0]
+        else:
+            is_other_univ = '알 수 없음'
+
+        
+        summarized_students.append({
+            'name': name,
+            'student_id': student_id,
+            'count': count_map[key],
+            'is_other_univ': is_other_univ
+        })        
+    
+    conn.close()
+    total = len(summarized_students)
+    
+    return render_template('manage.html', students=summarized_students, semesters=semesters, total=total)
 
 @app.route('/add_semester', methods=['POST']) # 학기 추가
 def add_semester():
@@ -120,9 +150,10 @@ def view_semester(label):
     cur = conn.cursor()
     cur.execute("SELECT * FROM students WHERE registration_semester = ?", (label,))
     students = cur.fetchall()
+    total = len(students)
     conn.close()
 
-    return render_template('semester.html', students=students, label=label)
+    return render_template('semester.html', students=students, label=label, total=total)
 
 @app.route('/add_student_to_semester/<label>', methods=['POST']) #학기별 추가
 def add_student_to_semester(label):
