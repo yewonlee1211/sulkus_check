@@ -54,7 +54,13 @@
             <td>{{ student.student_id }}</td>
             <td>{{ student.is_other_univ }}</td>
             <td>{{ student.registration_semester }}</td>
-            <td><a href="{{ url_for('delete_student', id=student.id) }}">삭제</a></td>
+            <td>
+                <form action="{{ url_for('bulk_delete') }}" method="POST" onsubmit="return confirm('정말 삭제하시겠습니까?')">
+                    <input type="hidden" name="name" value="{{ student.name }}">
+                    <input type="hidden" name="student_id" value="{{ student.student_id }}">
+                    <button type="submit">삭제</button>
+                </form>
+            </td>
         </tr>
         {% endfor %}
     </table>
